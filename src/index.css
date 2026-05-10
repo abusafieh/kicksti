@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-navy-900 text-white font-body antialiased;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-wide;
+    line-height: 1.2;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-navy-900 font-semibold px-6 py-3 rounded-lg
+           hover:bg-accent-dark transition-all duration-200 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply border border-navy-500 text-white px-6 py-3 rounded-lg
+           hover:border-accent hover:text-accent transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-navy-800 rounded-xl border border-navy-600 p-4;
+  }
+
+  .input-field {
+    @apply w-full bg-navy-700 border border-navy-500 rounded-lg px-4 py-3
+           text-white placeholder-gray-400 focus:outline-none focus:border-accent
+           focus:ring-1 focus:ring-accent transition-colors;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0f1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #243052;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4ade80;
+}
