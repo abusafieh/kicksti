@@ -4,7 +4,7 @@ import { Trophy, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { COUNTRY_FLAGS } from '../lib/constants';
+import { COUNTRY_FLAGS, TEAM_FLAGS } from '../lib/constants';
 
 interface LeaderboardEntry {
   id: string;
@@ -265,7 +265,7 @@ export default function Leaderboard() {
               <div className="grid grid-cols-3 gap-3">
                 <RankCard label="Global" rank={myRanks.global} total={myRanks.globalTotal} sub="🌍" />
                 <RankCard label={myRanks.countryName} rank={myRanks.country} total={myRanks.countryTotal} sub={COUNTRY_FLAGS[myRanks.countryName] || '🏳️'} />
-                <RankCard label={myRanks.teamName} rank={myRanks.team} total={myRanks.teamTotal} sub={COUNTRY_FLAGS[myRanks.teamName] || '⚽'} />
+                <RankCard label={myRanks.teamName} rank={myRanks.team} total={myRanks.teamTotal} sub={TEAM_FLAGS[myRanks.teamName] || '⚽'} />
               </div>
             </div>
           )}

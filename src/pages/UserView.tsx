@@ -49,6 +49,9 @@ export default function UserView() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState<Tab>('predictions');
+  const [userRanks, setUserRanks] = useState<{
+    global: number; country: number; team: number;
+  } | null>(null);
 
   useEffect(() => { loadData(); }, [userId]);
 
@@ -56,11 +59,13 @@ export default function UserView() {
     if (!userId) return;
     setLoading(true);
 
-    const [profileRes, matchesRes, predsRes, bracketRes] = await Promise.all([
+    const [profileRes, matchesRes, predsRes, bracketRes, allUsersRes, allPredsRes] = await Promise.all([
       supabase.from('users').select('id, display_name, team_name, country, favourite_team').eq('id', userId).maybeSingle(),
       supabase.from('matches').select('*').order('kickoff_time', { ascending: true }),
       supabase.from('predictions').select('match_id, predicted_home_score, predicted_away_score, points_awarded').eq('user_id', userId),
       supabase.from('bracket_predictions').select('*').eq('user_id', userId),
+      supabase.from('users').select('id, country, favourite_team'),
+      supabase.from('predictions').select('user_id, points_awarded'),
     ]);
 
     if (!profileRes.data) { setNotFound(true); setLoading(false); return; }
@@ -75,6 +80,31 @@ export default function UserView() {
     });
     setPredictions(predMap);
     setTotalPoints(points);
+
+    // Compute user's league rankings (global, country, team)
+    if (allUsersRes.data && allPredsRes.data) {
+      const userPoints: Record<string, number> = {};
+      allPredsRes.data.forEach(p => {
+        userPoints[p.user_id] = (userPoints[p.user_id] || 0) + (p.points_awarded || 0);
+      });
+
+      const me = profileRes.data;
+      const globalRank = Object.entries(userPoints)
+        .filter(([, pts]) => pts > points)
+        .length + 1;
+
+      const countryUsers = allUsersRes.data.filter(u => u.country === me.country);
+      const countryRank = countryUsers
+        .filter(u => (userPoints[u.id] || 0) > points)
+        .length + 1;
+
+      const teamUsers = allUsersRes.data.filter(u => u.favourite_team === me.favourite_team);
+      const teamRank = teamUsers
+        .filter(u => (userPoints[u.id] || 0) > points)
+        .length + 1;
+
+      setUserRanks({ global: globalRank, country: countryRank, team: teamRank });
+    }
 
     const koMap: Record<string, KnockoutScore> = {};
     bracketRes.data?.forEach(bp => {
@@ -117,8 +147,6 @@ export default function UserView() {
     );
   }
 
-  const predictedCount = Object.keys(predictions).length;
-
   return (
     <div className="px-6 py-6">
       <Link to="/leaderboard" className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-accent transition-colors mb-4">
@@ -139,10 +167,20 @@ export default function UserView() {
             <p className="text-base text-text-muted mt-1">{COUNTRY_FLAGS[profile.country] || ''} {profile.country}</p>
             <p className="text-base text-text-muted">{TEAM_FLAGS[profile.favourite_team] || ''} {profile.favourite_team}</p>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-3xl font-display text-accent">{totalPoints}</p>
-            <p className="text-xs text-text-muted">points</p>
-            <p className="text-sm text-text-muted mt-2">{predictedCount} predicted</p>
+          <div className="flex-1">
+            <div className="grid grid-cols-3 gap-2">
+              {userRanks && [
+                { label: 'Global', rank: userRanks.global },
+                { label: profile.country, rank: userRanks.country },
+                { label: profile.favourite_team, rank: userRanks.team },
+              ].map((league, i) => (
+                <div key={i} className="bg-elevated rounded-lg p-2 text-center">
+                  <p className="text-2xl font-display text-accent">#{league.rank}</p>
+                  <p className="text-xs text-text-muted truncate">{league.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-lg font-bold text-text-primary mt-3">{totalPoints} <span className="text-sm text-text-muted font-normal">pts</span></p>
           </div>
         </div>
       </div>
