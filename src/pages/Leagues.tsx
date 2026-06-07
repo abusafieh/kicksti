@@ -24,9 +24,7 @@ export default function Leagues() {
   const [copied, setCopied] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    loadTournaments();
-  }, [user]);
+  useEffect(() => { loadTournaments(); }, [user]);
 
   async function loadTournaments() {
     if (!user) return;
@@ -48,7 +46,6 @@ export default function Leagues() {
       .in('id', tournamentIds);
 
     if (data) {
-      // Get member counts
       const withCounts = await Promise.all(data.map(async t => {
         const { count } = await supabase
           .from('tournament_members')
@@ -76,25 +73,14 @@ export default function Leagues() {
     const inviteCode = generateCode();
     const { data, error: createError } = await supabase
       .from('private_tournaments')
-      .insert({
-        name: newName.trim(),
-        creator_id: user.id,
-        invite_code: inviteCode,
-      })
+      .insert({ name: newName.trim(), creator_id: user.id, invite_code: inviteCode })
       .select()
       .maybeSingle();
 
-    if (createError) {
-      setError(createError.message);
-      setActionLoading(false);
-      return;
-    }
+    if (createError) { setError(createError.message); setActionLoading(false); return; }
 
     if (data) {
-      await supabase.from('tournament_members').insert({
-        tournament_id: data.id,
-        user_id: user.id,
-      });
+      await supabase.from('tournament_members').insert({ tournament_id: data.id, user_id: user.id });
     }
 
     setNewName('');
@@ -122,17 +108,10 @@ export default function Leagues() {
 
     const { error: joinError } = await supabase
       .from('tournament_members')
-      .insert({
-        tournament_id: tournament.id,
-        user_id: user.id,
-      });
+      .insert({ tournament_id: tournament.id, user_id: user.id });
 
     if (joinError) {
-      if (joinError.code === '23505') {
-        setError('You are already a member of this tournament.');
-      } else {
-        setError(joinError.message);
-      }
+      setError(joinError.code === '23505' ? 'You are already a member of this tournament.' : joinError.message);
       setActionLoading(false);
       return;
     }
@@ -145,11 +124,7 @@ export default function Leagues() {
 
   async function leaveTournament(tournamentId: string) {
     if (!user) return;
-    await supabase
-      .from('tournament_members')
-      .delete()
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', user.id);
+    await supabase.from('tournament_members').delete().eq('tournament_id', tournamentId).eq('user_id', user.id);
     loadTournaments();
   }
 
@@ -160,75 +135,79 @@ export default function Leagues() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <h2 className="text-3xl font-display text-white mb-2">MY LEAGUES</h2>
-      <p className="text-sm text-gray-400 mb-6">You are automatically in the Global, {profile?.country}, and {profile?.favourite_team} leagues.</p>
+    <div className="px-6 py-6">
+      <h2 className="text-4xl font-display text-text-primary mb-2">MY LEAGUES</h2>
+      <p className="text-base text-text-muted mb-8">
+        You are automatically in the Global, {profile?.country}, and {profile?.favourite_team} leagues.
+      </p>
 
       {/* Auto leagues */}
-      <div className="space-y-2 mb-8">
-        <div className="card flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Global League</p>
-              <p className="text-xs text-gray-500">All players worldwide</p>
-            </div>
+      <div className="space-y-3 mb-10">
+        <div className="card p-5 flex items-center gap-4">
+          <div className="w-14 h-14 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
+            <Shield className="w-7 h-7 text-accent" />
+          </div>
+          <div>
+            <p className="text-base font-semibold text-text-primary">Global League</p>
+            <p className="text-sm text-text-muted">All players worldwide</p>
           </div>
         </div>
-        <div className="card flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-lg">
-              {profile?.country ? '🌍' : ''}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">{profile?.country || 'Country'} League</p>
-              <p className="text-xs text-gray-500">Players from your country</p>
-            </div>
+
+        <div className="card p-5 flex items-center gap-4">
+          <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center text-2xl shrink-0">
+            🌍
+          </div>
+          <div>
+            <p className="text-base font-semibold text-text-primary">{profile?.country || 'Country'} League</p>
+            <p className="text-sm text-text-muted">Players from your country</p>
           </div>
         </div>
-        <div className="card flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center text-lg">
-              ⚽
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">{profile?.favourite_team || 'Team'} Fans League</p>
-              <p className="text-xs text-gray-500">Fans of your favourite team</p>
-            </div>
+
+        <div className="card p-5 flex items-center gap-4">
+          <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center text-2xl shrink-0">
+            ⚽
+          </div>
+          <div>
+            <p className="text-base font-semibold text-text-primary">{profile?.favourite_team || 'Team'} Fans League</p>
+            <p className="text-sm text-text-muted">Fans of your favourite team</p>
           </div>
         </div>
       </div>
 
-      {/* Private tournaments */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-display text-white">PRIVATE TOURNAMENTS</h3>
-        <div className="flex gap-2">
-          <button onClick={() => { setShowJoin(true); setShowCreate(false); }} className="btn-secondary text-xs px-3 py-2">
+      {/* Private tournaments header */}
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-2xl font-display text-text-primary">PRIVATE TOURNAMENTS</h3>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setShowJoin(true); setShowCreate(false); setError(''); }}
+            className="btn-secondary text-sm px-5 py-2.5"
+          >
             Join
           </button>
-          <button onClick={() => { setShowCreate(true); setShowJoin(false); }} className="btn-primary text-xs px-3 py-2 flex items-center gap-1">
-            <Plus className="w-3.5 h-3.5" /> Create
+          <button
+            onClick={() => { setShowCreate(true); setShowJoin(false); setError(''); }}
+            className="btn-primary text-sm px-5 py-2.5 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Create
           </button>
         </div>
       </div>
 
       {/* Create form */}
       {showCreate && (
-        <div className="card mb-4">
-          <p className="text-sm font-medium text-white mb-3">Create a new tournament</p>
-          {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
-          <div className="flex gap-2">
+        <div className="card p-5 mb-5">
+          <p className="text-base font-semibold text-text-primary mb-4">Create a new tournament</p>
+          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+          <div className="flex gap-3">
             <input
               type="text"
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Tournament name"
-              className="input-field text-sm flex-1"
+              className="input-field text-base flex-1"
               maxLength={50}
             />
-            <button onClick={createTournament} disabled={actionLoading} className="btn-primary text-sm px-4">
+            <button onClick={createTournament} disabled={actionLoading} className="btn-primary text-base px-6">
               {actionLoading ? '...' : 'Create'}
             </button>
           </div>
@@ -237,51 +216,52 @@ export default function Leagues() {
 
       {/* Join form */}
       {showJoin && (
-        <div className="card mb-4">
-          <p className="text-sm font-medium text-white mb-3">Join with invite code</p>
-          {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
-          <div className="flex gap-2">
+        <div className="card p-5 mb-5">
+          <p className="text-base font-semibold text-text-primary mb-4">Join with invite code</p>
+          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+          <div className="flex gap-3">
             <input
               type="text"
               value={joinCode}
               onChange={e => setJoinCode(e.target.value.toUpperCase())}
               placeholder="Enter 6-character code"
-              className="input-field text-sm flex-1 uppercase tracking-widest"
+              className="input-field text-base flex-1 uppercase tracking-widest"
               maxLength={6}
             />
-            <button onClick={joinTournament} disabled={actionLoading} className="btn-primary text-sm px-4">
+            <button onClick={joinTournament} disabled={actionLoading} className="btn-primary text-base px-6">
               {actionLoading ? '...' : 'Join'}
             </button>
           </div>
         </div>
       )}
 
+      {/* Tournament list */}
       {loading ? (
-        <div className="flex items-center justify-center h-32">
+        <div className="flex items-center justify-center h-40">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
       ) : tournaments.length === 0 ? (
-        <div className="text-center py-12 card">
-          <Users className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">No private tournaments yet.</p>
-          <p className="text-gray-500 text-xs mt-1">Create one or join with an invite code.</p>
+        <div className="text-center py-16 card">
+          <Users className="w-14 h-14 text-text-faint mx-auto mb-4" />
+          <p className="text-base text-text-muted">No private tournaments yet.</p>
+          <p className="text-sm text-text-faint mt-1">Create one or join with an invite code.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {tournaments.map(t => (
-            <div key={t.id} className="card">
+            <div key={t.id} className="card p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-white">{t.name}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-gray-500">
-                      <Users className="w-3 h-3 inline mr-1" />{t.member_count} members
+                  <p className="text-base font-semibold text-text-primary">{t.name}</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="text-sm text-text-muted flex items-center gap-1.5">
+                      <Users className="w-4 h-4" />{t.member_count} members
                     </span>
                     <button
                       onClick={() => copyCode(t.invite_code)}
-                      className="text-xs text-accent hover:underline flex items-center gap-1"
+                      className="text-sm text-accent hover:underline flex items-center gap-1.5 font-mono font-bold tracking-widest"
                     >
-                      {copied === t.invite_code ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      {copied === t.invite_code ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       {t.invite_code}
                     </button>
                   </div>
@@ -289,10 +269,10 @@ export default function Leagues() {
                 {t.creator_id !== user?.id && (
                   <button
                     onClick={() => leaveTournament(t.id)}
-                    className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+                    className="p-2.5 text-text-muted hover:text-red-400 transition-colors"
                     title="Leave tournament"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-5 h-5" />
                   </button>
                 )}
               </div>

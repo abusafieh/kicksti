@@ -2,8 +2,9 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Lock, Check, AlertCircle, Target, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePredictions } from '../contexts/PredictionsContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { TEAM_FLAGS } from '../lib/constants';
+import { TEAM_ISO_CODES, toEnglishName } from '../lib/constants';
 import { checkUpcomingLocks } from '../lib/notifications';
 import { checkNewPoints } from '../lib/pointsChecker';
 
@@ -31,6 +32,7 @@ interface Prediction {
 export default function Predict() {
   const { user, profile } = useAuth();
   const { notify } = useNotifications();
+  const { updatePrediction } = usePredictions();
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
   const [localScores, setLocalScores] = useState<Record<string, { home: string; away: string }>>({});
@@ -41,6 +43,7 @@ export default function Predict() {
   const notifiedLocksRef = useRef<Set<string>>(new Set());
   const saveTimestamps = useRef<Record<string, number>>({});
   const allSaveTimes = useRef<number[]>([]);
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     loadData();
@@ -182,10 +185,12 @@ export default function Predict() {
     return `${mins}m`;
   }
 
-  async function savePrediction(matchId: string) {
+  async function savePrediction(matchId: string, directHome?: string, directAway?: string) {
     if (!user) return;
-    const scores = localScores[matchId];
-    if (!scores || scores.home === '' || scores.away === '') return;
+    const home = directHome ?? localScores[matchId]?.home;
+    const away = directAway ?? localScores[matchId]?.away;
+    if (home === '' || home === undefined || away === '' || away === undefined) return;
+    const scores = { home, away };
 
     const now = Date.now();
     const lastSave = saveTimestamps.current[matchId] || 0;
@@ -268,29 +273,29 @@ export default function Predict() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="px-6 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-display text-white">PREDICTIONS</h2>
-          <p className="text-sm text-gray-400">{predictedCount} of {matches.length} matches predicted</p>
+          <h2 className="text-4xl font-display text-text-primary">PREDICTIONS</h2>
+          <p className="text-sm text-text-muted">{predictedCount} of {matches.length} matches predicted</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={sharePredictions}
-            className="p-2 text-gray-400 hover:text-accent transition-colors"
+            className="p-2 text-text-muted hover:text-accent transition-colors"
             title="Share predictions"
           >
             <Share2 className="w-5 h-5" />
           </button>
-          <div className="bg-navy-700 rounded-lg px-3 py-2 text-center">
+          <div className="bg-elevated border border-border rounded-lg px-3 py-2 text-center">
             <span className="text-2xl font-display text-accent">{predictedCount}</span>
-            <span className="text-xs text-gray-400 block">/{matches.length}</span>
+            <span className="text-xs text-text-muted block">/{matches.length}</span>
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-2 bg-navy-700 rounded-full mb-6 overflow-hidden">
+      <div className="w-full h-2 bg-elevated rounded-full mb-6 overflow-hidden border border-border">
         <div
           className="h-full bg-accent rounded-full transition-all duration-500"
           style={{ width: `${matches.length > 0 ? (predictedCount / matches.length) * 100 : 0}%` }}
@@ -299,9 +304,9 @@ export default function Predict() {
 
       {/* Urgent notification */}
       {urgentMatches.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 mb-6 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
-          <p className="text-sm text-amber-200">
+        <div className="bg-warning-bg border border-warning-border rounded-lg px-4 py-3 mb-6 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+          <p className="text-sm text-warning">
             {urgentMatches.length} match{urgentMatches.length > 1 ? 'es' : ''} lock in less than 1 hour. Submit your predictions!
           </p>
         </div>
@@ -315,8 +320,8 @@ export default function Predict() {
             onClick={() => setActiveGroup(g)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeGroup === g
-                ? 'bg-accent text-navy-900'
-                : 'bg-navy-700 text-gray-400 hover:text-white'
+                ? 'bg-accent text-white'
+                : 'bg-elevated border border-border text-text-muted hover:text-text-primary hover:border-accent/40'
             }`}
           >
             Group {g}
@@ -335,108 +340,130 @@ export default function Predict() {
 
           return (
             <div key={match.id}>
-              <div className={`card transition-all ${locked ? 'opacity-75' : ''}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-gray-500">
+              <div className={`card p-5 transition-all ${locked ? 'opacity-75' : ''}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-text-muted font-medium">
                     {new Date(match.kickoff_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    {' '}
+                    {' · '}
                     {new Date(match.kickoff_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <div className="flex items-center gap-2">
                     {match.status === 'finished' && pred && (
-                      <span className="text-xs font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">
+                      <span className="text-sm font-bold text-accent bg-accent-dim border border-accent-border px-3 py-1 rounded-lg">
                         +{pred.points_awarded} pts
                       </span>
                     )}
                     {locked ? (
-                      <Lock className="w-3.5 h-3.5 text-gray-500" />
+                      <Lock className="w-4 h-4 text-text-faint" />
                     ) : timeLeft ? (
-                      <span className="text-xs text-amber-400">Locks in {timeLeft}</span>
+                      <span className="text-sm text-warning font-semibold">Locks in {timeLeft}</span>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   {/* Home team */}
-                  <div className="flex-1 text-right">
-                    <span className="text-sm font-medium text-white">
-                      {TEAM_FLAGS[match.home_team] || ''} {match.home_team}
-                    </span>
+                  <div className="flex-1 text-right flex items-center justify-end gap-2">
+                    <span className="text-base font-semibold text-text-primary">{toEnglishName(match.home_team)}</span>
+                    {TEAM_ISO_CODES[match.home_team] && (
+                      <img
+                        src={`https://flagcdn.com/w40/${TEAM_ISO_CODES[match.home_team]}.png`}
+                        width={28}
+                        alt={toEnglishName(match.home_team)}
+                        className="inline-block rounded shrink-0"
+                      />
+                    )}
                   </div>
 
                   {/* Score inputs */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min="0"
-                      max="20"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={2}
                       value={scores.home}
-                      onChange={e => setLocalScores(prev => ({
-                        ...prev,
-                        [match.id]: { ...prev[match.id], home: e.target.value }
-                      }))}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setLocalScores(prev => {
+                          const away = prev[match.id]?.away ?? '';
+                          if (val !== '' && away !== '') {
+                            updatePrediction(match.id, val, away);
+                            clearTimeout(debounceTimers.current[match.id]);
+                            debounceTimers.current[match.id] = setTimeout(() => savePrediction(match.id, val, away), 800);
+                          }
+                          return { ...prev, [match.id]: { ...prev[match.id], home: val } };
+                        });
+                      }}
                       disabled={locked}
-                      className="w-10 h-10 bg-navy-700 border border-navy-500 rounded-lg text-center text-white text-sm font-bold
-                                 focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-14 h-14 bg-surface border-2 border-border rounded-xl text-center text-text-primary text-xl font-bold
+                                 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     />
-                    <span className="text-gray-500 text-xs">-</span>
+                    <span className="text-text-faint text-lg font-bold">-</span>
                     <input
-                      type="number"
-                      min="0"
-                      max="20"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={2}
                       value={scores.away}
-                      onChange={e => setLocalScores(prev => ({
-                        ...prev,
-                        [match.id]: { ...prev[match.id], away: e.target.value }
-                      }))}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setLocalScores(prev => {
+                          const home = prev[match.id]?.home ?? '';
+                          if (val !== '' && home !== '') {
+                            updatePrediction(match.id, home, val);
+                            clearTimeout(debounceTimers.current[match.id]);
+                            debounceTimers.current[match.id] = setTimeout(() => savePrediction(match.id, home, val), 800);
+                          }
+                          return { ...prev, [match.id]: { ...prev[match.id], away: val } };
+                        });
+                      }}
                       disabled={locked}
-                      className="w-10 h-10 bg-navy-700 border border-navy-500 rounded-lg text-center text-white text-sm font-bold
-                                 focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-14 h-14 bg-surface border-2 border-border rounded-xl text-center text-text-primary text-xl font-bold
+                                 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
                   {/* Away team */}
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white">
-                      {match.away_team} {TEAM_FLAGS[match.away_team] || ''}
-                    </span>
+                  <div className="flex-1 flex items-center gap-2">
+                    {TEAM_ISO_CODES[match.away_team] && (
+                      <img
+                        src={`https://flagcdn.com/w40/${TEAM_ISO_CODES[match.away_team]}.png`}
+                        width={28}
+                        alt={match.away_team}
+                        className="inline-block rounded shrink-0"
+                      />
+                    )}
+                    <span className="text-base font-semibold text-text-primary">{toEnglishName(match.away_team)}</span>
                   </div>
                 </div>
 
                 {/* Actual score for finished matches */}
                 {match.status === 'finished' && match.home_score !== null && (
-                  <div className="mt-2 pt-2 border-t border-navy-600 text-center">
-                    <span className="text-xs text-gray-500">Final: </span>
-                    <span className="text-xs font-bold text-white">
+                  <div className="mt-3 pt-3 border-t border-border text-center">
+                    <span className="text-sm text-text-muted">Final: </span>
+                    <span className="text-sm font-bold text-text-primary">
                       {match.home_score} - {match.away_score}
                     </span>
                   </div>
                 )}
 
-                {/* Save button */}
+                {/* Autosave indicator */}
                 {!locked && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={() => savePrediction(match.id)}
-                      disabled={isSaving || !scores.home || !scores.away}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent text-xs font-medium rounded-lg
-                                 hover:bg-accent/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSaving ? (
-                        <div className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
-                      ) : pred ? (
-                        <Check className="w-3 h-3" />
-                      ) : null}
-                      {pred ? 'Update' : 'Save'}
-                    </button>
+                  <div className="mt-3 flex justify-end items-center h-5">
+                    {isSaving ? (
+                      <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    ) : pred && scores.home && scores.away ? (
+                      <Check className="w-4 h-4 text-accent" />
+                    ) : null}
                   </div>
                 )}
               </div>
 
               {/* Ad slot every 4 matches */}
               {(idx + 1) % 4 === 0 && idx < groupMatches.length - 1 && (
-                <div id={`ad-slot-${Math.floor(idx / 4) + 1}`} className="my-3 h-20 bg-navy-800/50 border border-dashed border-navy-600 rounded-lg flex items-center justify-center">
-                  <span className="text-xs text-gray-600">Ad Space</span>
+                <div id={`ad-slot-${Math.floor(idx / 4) + 1}`} className="my-3 h-20 bg-elevated border border-dashed border-border rounded-lg flex items-center justify-center">
+                  <span className="text-xs text-text-faint">Ad Space</span>
                 </div>
               )}
             </div>
@@ -446,8 +473,8 @@ export default function Predict() {
 
       {matches.length === 0 && (
         <div className="text-center py-16">
-          <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">Matches will appear here once the tournament schedule is loaded.</p>
+          <Target className="w-12 h-12 text-text-faint mx-auto mb-4" />
+          <p className="text-text-muted">Matches will appear here once the tournament schedule is loaded.</p>
         </div>
       )}
     </div>

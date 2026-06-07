@@ -78,7 +78,7 @@ export const QUALIFIED_TEAMS: { name: string; flag: string }[] = [
   { name: "Sweden", flag: "🇸🇪" },
   { name: "Switzerland", flag: "🇨🇭" },
   { name: "Tunisia", flag: "🇹🇳" },
-  { name: "Türkiye", flag: "🇹🇷" },
+  { name: "Turkey", flag: "🇹🇷" },
   { name: "Uruguay", flag: "🇺🇾" },
   { name: "USA", flag: "🇺🇸" },
   { name: "Uzbekistan", flag: "🇺🇿" },
@@ -120,4 +120,40 @@ export const COUNTRY_FLAGS: Record<string, string> = {
   "United Kingdom": "🇬🇧", "United States": "🇺🇸", "Uruguay": "🇺🇾",
   "USA": "🇺🇸", "Uzbekistan": "🇺🇿", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳",
   "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼",
+};
+
+const TEAM_NAME_EN: Record<string, string> = {
+  "Türkiye": "Turkey",
+  "Curacao": "Curaçao",
+};
+
+export function toEnglishName(name: string): string {
+  return TEAM_NAME_EN[name] ?? name;
+}
+
+export const TEAM_ISO_CODES: Record<string, string> = {
+  "Algeria": "dz", "Argentina": "ar", "Australia": "au", "Austria": "at",
+  "Belgium": "be", "Bolivia": "bo", "Bosnia and Herzegovina": "ba",
+  "Brazil": "br", "Canada": "ca", "Cape Verde": "cv", "Chile": "cl",
+  "China": "cn", "Colombia": "co", "Costa Rica": "cr", "Croatia": "hr",
+  "Curaçao": "cw", "Czechia": "cz", "Czech Republic": "cz",
+  "DR Congo": "cd", "Denmark": "dk", "Ecuador": "ec", "Egypt": "eg",
+  "England": "gb-eng", "France": "fr", "Germany": "de", "Ghana": "gh",
+  "Greece": "gr", "Haiti": "ht", "Honduras": "hn", "Hungary": "hu",
+  "Iceland": "is", "India": "in", "Indonesia": "id", "Iran": "ir",
+  "Iraq": "iq", "Ireland": "ie", "Israel": "il", "Italy": "it",
+  "Ivory Coast": "ci", "Jamaica": "jm", "Japan": "jp", "Jordan": "jo",
+  "Kenya": "ke", "Kuwait": "kw", "Mexico": "mx", "Morocco": "ma",
+  "Netherlands": "nl", "New Zealand": "nz", "Nigeria": "ng",
+  "North Macedonia": "mk", "Norway": "no", "Oman": "om", "Pakistan": "pk",
+  "Palestine": "ps", "Panama": "pa", "Paraguay": "py", "Peru": "pe",
+  "Philippines": "ph", "Poland": "pl", "Portugal": "pt", "Qatar": "qa",
+  "Romania": "ro", "Russia": "ru", "Saudi Arabia": "sa",
+  "Scotland": "gb-sct", "Senegal": "sn", "Serbia": "rs", "Slovakia": "sk",
+  "Slovenia": "si", "South Africa": "za", "South Korea": "kr",
+  "Spain": "es", "Sweden": "se", "Switzerland": "ch", "Syria": "sy",
+  "Taiwan": "tw", "Tunisia": "tn", "Türkiye": "tr", "Turkey": "tr",
+  "Ukraine": "ua", "United Arab Emirates": "ae", "United States": "us",
+  "Uruguay": "uy", "USA": "us", "Uzbekistan": "uz", "Venezuela": "ve",
+  "Vietnam": "vn", "Wales": "gb-wls",
 };

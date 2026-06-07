@@ -59,9 +59,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   const styles = {
-    warning: 'bg-[#92400e]/90 border-amber-600 text-amber-100',
-    success: 'bg-accent/20 border-green-500/50 text-green-200',
-    info: 'bg-navy-800/90 border-gray-600 text-gray-200',
+    warning: 'bg-warning-bg border-warning-border text-warning',
+    success: 'bg-success-bg border-success-border text-success',
+    info: 'bg-elevated border-border text-text-primary',
   };
 
   return (

@@ -9,46 +9,57 @@ export default {
     extend: {
 
       colors: {
-        background: "#0a0f1e",
-        surface:    "#0d1526",
-        elevated:   "#111c30",
-        border: "#1e2a3d",
+        background: "#f4f7fa",
+        surface:    "#ffffff",
+        elevated:   "#f0f4f8",
+        border:     "#e2e8f0",
+
+        nav: "#064e3b",
 
         accent: {
-          DEFAULT: "#4ade80",
-          dim:     "#4ade8015",
-          border:  "#4ade8040",
-          hover:   "#22c55e",
+          DEFAULT: "#059669",
+          dim:     "rgba(5,150,105,0.09)",
+          border:  "rgba(5,150,105,0.28)",
+          hover:   "#047857",
         },
 
-        locked:  "#f97316",
-        correct: "#4ade80",
-        wrong:   "#f87171",
+        locked:  "#d97706",
+        correct: "#059669",
+        wrong:   "#dc2626",
 
-        gold:   "#f59e0b",
-        silver: "#94a3b8",
-        bronze: "#c97c3a",
+        gold:   "#d97706",
+        silver: "#64748b",
+        bronze: "#92400e",
 
         text: {
-          primary: "#e2e8f0",
-          muted:   "#94a3b8",
-          faint:   "#4a5568",
+          primary: "#111827",
+          muted:   "#6b7280",
+          faint:   "#9ca3af",
         },
 
         success: {
-          DEFAULT: "#4ade80",
-          bg:      "#4ade8010",
-          border:  "#4ade8030",
+          DEFAULT: "#059669",
+          bg:      "rgba(5,150,105,0.08)",
+          border:  "rgba(5,150,105,0.22)",
         },
         warning: {
-          DEFAULT: "#f59e0b",
-          bg:      "#f59e0b10",
-          border:  "#f59e0b30",
+          DEFAULT: "#d97706",
+          bg:      "rgba(217,119,6,0.08)",
+          border:  "rgba(217,119,6,0.28)",
         },
         danger: {
-          DEFAULT: "#f97316",
-          bg:      "#f9731610",
-          border:  "#f9731630",
+          DEFAULT: "#dc2626",
+          bg:      "rgba(220,38,38,0.08)",
+          border:  "rgba(220,38,38,0.28)",
+        },
+
+        // Remap navy-* to light equivalents so existing JSX classes still work
+        navy: {
+          500: "#d1d5db",
+          600: "#e2e8f0",
+          700: "#f3f4f6",
+          800: "#ffffff",
+          900: "#f4f7fa",
         },
       },
 
@@ -59,13 +70,13 @@ export default {
       },
 
       fontSize: {
-        "2xs": ["10px", { lineHeight: "14px", letterSpacing: "0.06em" }],
-        xs:    ["11px", { lineHeight: "16px" }],
-        sm:    ["13px", { lineHeight: "20px" }],
-        base:  ["15px", { lineHeight: "22px" }],
-        lg:    ["18px", { lineHeight: "24px" }],
-        xl:    ["22px", { lineHeight: "28px" }],
-        "2xl": ["28px", { lineHeight: "34px" }],
+        "2xs": ["11px", { lineHeight: "16px", letterSpacing: "0.06em" }],
+        xs:    ["12px", { lineHeight: "18px" }],
+        sm:    ["14px", { lineHeight: "20px" }],
+        base:  ["16px", { lineHeight: "24px" }],
+        lg:    ["18px", { lineHeight: "26px" }],
+        xl:    ["22px", { lineHeight: "30px" }],
+        "2xl": ["28px", { lineHeight: "36px" }],
         score: ["32px", { lineHeight: "1", fontWeight: "700" }],
       },
 
@@ -89,7 +100,7 @@ export default {
       },
 
       borderWidth: {
-        DEFAULT: "0.5px",
+        DEFAULT: "1px",
         "0.5":   "0.5px",
         "1":     "1px",
         "2":     "2px",
@@ -97,14 +108,16 @@ export default {
 
       boxShadow: {
         none:            "none",
-        "focus-accent":  "0 0 0 3px rgba(74, 222, 128, 0.25)",
-        "focus-default": "0 0 0 3px rgba(255, 255, 255, 0.08)",
-        "glow-accent":   "0 0 16px rgba(74, 222, 128, 0.20)",
-        "glow-gold":     "0 0 16px rgba(245, 158, 11, 0.20)",
+        card:            "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)",
+        "card-hover":    "0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06)",
+        "focus-accent":  "0 0 0 3px rgba(5,150,105,0.18)",
+        "focus-default": "0 0 0 3px rgba(0,0,0,0.06)",
+        "glow-accent":   "0 0 16px rgba(5,150,105,0.15)",
+        "glow-gold":     "0 0 16px rgba(217,119,6,0.18)",
       },
 
       opacity: {
-        "locked": "0.6",
+        "locked": "0.55",
       },
 
       minHeight: {
@@ -128,8 +141,8 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 0px rgba(74, 222, 128, 0)" },
-          "50%":       { boxShadow: "0 0 12px rgba(74, 222, 128, 0.3)" },
+          "0%, 100%": { boxShadow: "0 0 0px rgba(5,150,105,0)" },
+          "50%":       { boxShadow: "0 0 12px rgba(5,150,105,0.22)" },
         },
         "score-fill": {
           "0%":   { transform: "scale(1)" },
@@ -155,7 +168,7 @@ export default {
       },
 
       backgroundImage: {
-        "shimmer": "linear-gradient(90deg, #0d1526 0px, #111c30 80px, #0d1526 160px)",
+        "shimmer": "linear-gradient(90deg, #f0f4f8 0px, #ffffff 80px, #f0f4f8 160px)",
       },
 
       backgroundSize: {

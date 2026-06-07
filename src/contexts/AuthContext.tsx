@@ -6,6 +6,7 @@ interface UserProfile {
   id: string;
   email: string;
   display_name: string;
+  team_name: string | null;
   country: string;
   favourite_team: string;
   created_at: string;
@@ -16,7 +17,7 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string, country: string, favouriteTeam: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, displayName: string, teamName: string, country: string, favouriteTeam: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -31,20 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+    if (error) console.error('fetchProfile error:', error);
     setProfile(data);
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
       }
       setLoading(false);
     });
@@ -62,18 +64,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signUp(email: string, password: string, displayName: string, country: string, favouriteTeam: string) {
+  async function signUp(email: string, password: string, displayName: string, teamName: string, country: string, favouriteTeam: string) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     if (!data.user) return { error: 'Signup failed' };
 
-    const { error: profileError } = await supabase.from('users').insert({
+    let profileError;
+
+    ({ error: profileError } = await supabase.from('users').insert({
       id: data.user.id,
       email,
       display_name: displayName,
+      team_name: teamName || null,
       country,
       favourite_team: favouriteTeam,
-    });
+    }));
+
+    // Fallback: if team_name column doesn't exist yet, insert without it
+    if (profileError) {
+      ({ error: profileError } = await supabase.from('users').insert({
+        id: data.user.id,
+        email,
+        display_name: displayName,
+        country,
+        favourite_team: favouriteTeam,
+      }));
+    }
 
     if (profileError) return { error: profileError.message };
     await fetchProfile(data.user.id);

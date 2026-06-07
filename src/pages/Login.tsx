@@ -31,13 +31,13 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-2xl mb-4">
             <Trophy className="w-8 h-8 text-accent" />
           </div>
-          <h1 className="text-4xl font-display text-white">KICKSTI</h1>
+          <h1 className="text-4xl font-display" style={{ color: '#C9A84C' }}>KICKSTI</h1>
           <p className="text-gray-400 mt-2">World Cup 2026 Predictions</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
+            <div className="bg-danger-bg border border-danger-border rounded-lg px-4 py-3 text-danger text-sm">
               {error}
             </div>
           )}

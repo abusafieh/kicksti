@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { PredictionsProvider } from './contexts/PredictionsContext';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -13,6 +14,7 @@ import Leagues from './pages/Leagues';
 import Profile from './pages/Profile';
 import Rules from './pages/Rules';
 import Admin from './pages/Admin';
+import UserView from './pages/UserView';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -56,6 +58,7 @@ function AppRoutes() {
         <Route path="standings" element={<Standings />} />
         <Route path="bracket" element={<Bracket />} />
         <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="user/:userId" element={<UserView />} />
         <Route path="leagues" element={<Leagues />} />
         <Route path="profile" element={<Profile />} />
         <Route path="rules" element={<Rules />} />
@@ -69,9 +72,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <NotificationProvider>
-          <AppRoutes />
-        </NotificationProvider>
+        <PredictionsProvider>
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
+        </PredictionsProvider>
       </AuthProvider>
     </BrowserRouter>
   );
